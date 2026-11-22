@@ -2,10 +2,14 @@
     "name": "monorepo",
     "private": true,
     "version": "1.0.0",
+    "packageManager": "pnpm@9.15.9",
     "scripts": {
         "dev:1": "pnpm --filter ines-portfolio dev",
         "dev:2": "pnpm --filter jens-portfolio dev",
         "build:1": "pnpm --filter ines-portfolio build",
-        "build:2": "pnpm --filter jens-portfolio build"
+        "build:2": "pnpm --filter jens-portfolio build",
+        "build": "pnpm -r build",
+        "lint": "pnpm -r lint",
+        "test": "pnpm -r test"
     }
 }
