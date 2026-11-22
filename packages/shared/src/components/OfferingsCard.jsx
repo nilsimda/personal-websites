@@ -8,8 +8,12 @@ export const OfferingsCard = ({ offering, name, index }) => {
         if (hasLongContent) {
             e.stopPropagation();
             setIsExpanded(!isExpanded);
+        } else if (offering.link.startsWith('mailto:')) {
+            // A mailto: in a new tab leaves an empty tab (or nothing) behind;
+            // in the same tab it hands over to the mail program.
+            window.location.href = offering.link;
         } else {
-            window.open(offering.link, '_blank');
+            window.open(offering.link, '_blank', 'noopener');
         }
     };
 
