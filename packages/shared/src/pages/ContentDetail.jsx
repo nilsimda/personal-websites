@@ -1,39 +1,61 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@monorepo/shared/utils';
 import { Embed, DynamicNavigation } from '@monorepo/shared/components';
+import { fetchSiteContent } from '../utils/siteContent.js';
 
-function ContentDetail({ logoUrl }) {
+const SITE_ID = import.meta.env.VITE_SUPABASE_USER_ID;
+
+function ContentDetail({ logoUrl, siteId = SITE_ID }) {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [content, setContent] = useState(null);
-    const [loading, setLoading] = useState(true);
+    // status: 'loading' | 'found' | 'missing' | 'error'
+    const [state, setState] = useState({ status: 'loading', content: null });
 
     useEffect(() => {
-        const fetchContent = async () => {
-            const { data, error } = await supabase
-                .from('content')
-                .select('*')
-                .eq('id', id)
-                .single();
+        let active = true;
+        setState({ status: 'loading', content: null });
 
-            if (error) {
+        fetchSiteContent(supabase, { id, siteId })
+            .then((content) => {
+                if (!active) return;
+                setState(content
+                    ? { status: 'found', content }
+                    : { status: 'missing', content: null });
+            })
+            .catch((error) => {
                 console.error('Error fetching content:', error);
-                navigate('/');
-                return;
-            }
+                if (active) setState({ status: 'error', content: null });
+            });
 
-            setContent(data);
-            setLoading(false);
+        return () => {
+            active = false;
         };
+    }, [id, siteId]);
 
-        fetchContent();
-    }, [id, navigate]);
-
-    if (loading) {
+    if (state.status === 'loading') {
         return <div className="text-center py-16">Lädt...</div>;
     }
 
+    if (state.status !== 'found') {
+        return (
+            <>
+                <DynamicNavigation isHomePage={false} logoUrl={logoUrl} />
+                <div className="max-w-4xl mx-auto py-16 px-4 text-center">
+                    <h1 className="text-2xl font-bold mb-4">
+                        {state.status === 'missing'
+                            ? 'Beitrag nicht gefunden'
+                            : 'Beitrag konnte nicht geladen werden'}
+                    </h1>
+                    <Link to="/" className="text-gray-600 hover:text-gray-900">
+                        Zur Startseite
+                    </Link>
+                </div>
+            </>
+        );
+    }
+
+    const { content } = state;
     return (
         <>
             <DynamicNavigation isHomePage={false} logoUrl={logoUrl} />
